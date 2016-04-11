@@ -1,0 +1,552 @@
+;--------------------------------------------------------------------------
+; Author:       Peter Hollobon
+; Date:           /  /95
+; Language:     PcBoard PPL
+;--------------------------------------------------------------------------
+
+; This is the ULTiCHAT PPE, which will hopefully eventually support
+; * KaosCaps                    [û]
+; * macros                      [ ]
+; * colour chatting             [û]
+; * chat logging                [ ]
+; * scrolling (waaa!)           [ ]
+; * vertical chatmode           [ ]
+; * word wrap                   [ ]
+; * configurable chat screens   [û]
+; * scrolly on page reason      [û]
+; * scrolly on reason too short [û]
+; * funky copyright thing       [û]
+; * checks page time            [û]
+; * scrolly on sysop not in     [û]
+; * vertical chat               [ ]
+; * boxed chat                  [ ]
+; * cool quitting of chatmode   [û]
+; * pagetune                    [û]
+; * emergency page password     [û]
+; * lightbar emergency page     [û]
+
+
+; ----------[FUNCTiON DECLARATiONS]------------------------------------------
+declare procedure logo ()
+declare procedure getreason ()
+declare procedure quitchat (string middle)
+declare procedure page (integer pagetime) 
+DECLARE FUNCTION getstr(INTEGER X,INTEGER Y,INTEGER MAXLEN,STRING COLOR, INTEGER OPTS, string scrolly) STRING
+
+*$USEFUNCS
+
+; ----------[MAiN CODE BEGiNS]-----------------------------------------------
+begin
+  string first,sysop,cnote
+  string syskey, userkey
+  first="@FIRST@"
+  sysop="iMPULSE"
+  cnote="ULTiCHAT-PPE (C) Peter Hollobon 1995"
+  integer sy,sx
+  integer uy,ux
+  integer sk_f,uk_f
+  integer temp
+  integer col
+  sy=2
+  sx=1
+  uy=14
+  ux=1
+
+  logo()
+  getreason()
+  page(1)
+
+	; display the chatting screen...
+	dispfile PPEPATH()+"chatscrn.pcb",GRAPH
+
+  ; display the names
+  ansipos 40-(len(sysop)/2)-1,1
+  print "@X01[@X09"+sysop+"@X01]"
+  ansipos 40-(len(first)/2)-1,13
+  print "@X01[@X09"+first+"@X01]"
+  ansipos 40-(len(cnote)/2)-1,12
+  print "@X0F"+cnote
+
+  while (syskey!=chr(27)) do
+    userkey=minkey()
+    syskey=kinkey()
+    if (syskey!="") then
+      if (asc(syskey)>31) then
+        ansipos sx,sy
+        if (sk_f=1) then
+          syskey=upper(syskey)
+          if ((syskey="A")||(syskey="E")||(syskey="I")||(syskey="O")||(syskey="U")) then
+            syskey=lower(syskey)
+          endif
+        endif
+        if ((asc(syskey)>=65)&&(asc(syskey)<=90)) then 
+          if (col!=1) then
+            print "@X0F"
+            col=1
+          endif
+        elseif ((asc(syskey)>=97)&&(asc(syskey)<=122)) then
+          if (col!=2) then
+            print "@X07"
+            col=2
+          endif
+        elseif ((asc(syskey)>=48)&&(asc(syskey)<=57)) then
+          if (col!=3) then
+            print "@X0D"
+            col=3
+          endif
+        else
+          if (col!=4) then
+            print "@X0A"
+            col=4
+          endif
+        endif
+        print syskey
+        sx=sx+1
+        if (sx>78) then
+          sx=1
+          sy=sy+1
+          if (sy>10) then
+            sy=2
+            for temp=2 to 10
+              ansipos 1,temp
+              print "@CLREOL@"
+            next temp
+          endif
+          ansipos sx,sy
+        endif
+      elseif (asc(syskey)=13) then
+        sx=1
+        sy=sy+1
+        if (sy>10) then
+          sy=2
+          for temp=2 to 10
+            ansipos 1,temp
+            print "@CLREOL@"
+          next temp
+        endif
+        ansipos sx,sy
+      elseif (asc(syskey)=8) then
+        if (sx>1) then
+          sx=sx-1
+          ansipos sx,sy
+          print " "
+          ansipos sx,sy
+        endif
+      elseif (asc(syskey)=1) then
+        if (sk_f=0) then
+          sk_f=1
+        else
+          sk_f=0
+        endif
+      endif
+    endif
+;------------------[User Processing]--------------------
+    if (userkey!="") then
+      if (asc(userkey)>31) then
+        ansipos ux,uy
+        if (uk_f=1) then
+          userkey=upper(userkey)
+          if ((userkey="A")||(userkey="E")||(userkey="I")||(userkey="O")||(userkey="U")) then
+            userkey=lower(userkey)
+          endif
+        endif
+        if ((asc(userkey)>=65)&&(asc(userkey)<=90)) then 
+          if (col!=1) then
+            print "@X0F"
+            col=1
+          endif
+        elseif ((asc(userkey)>=97)&&(asc(userkey)<=122)) then
+          if (col!=2) then
+            print "@X07"
+            col=2
+          endif
+        elseif ((asc(userkey)>=48)&&(asc(userkey)<=57)) then
+          if (col!=3) then
+            print "@X0D"
+            col=3
+          endif
+        else
+          if (col!=4) then
+            print "@X0A"
+            col=4
+          endif
+        endif
+        print userkey
+        ux=ux+1
+        if (ux>78) then
+          ux=1
+          uy=uy+1
+          if (uy>22) then
+            uy=14
+            for temp=14 to 22
+              ansipos 1,temp
+              print "@CLREOL@"
+            next temp
+          endif
+          ansipos ux,uy
+        endif
+      elseif (asc(userkey)=13) then
+        ux=1
+        uy=uy+1
+        if (uy>22) then
+          uy=14
+          for temp=14 to 22
+            ansipos 1,temp
+            print "@CLREOL@"
+          next temp
+        endif
+        ansipos ux,uy
+      elseif (asc(userkey)=8) then
+        if (ux>1) then
+          ux=ux-1
+          ansipos ux,uy
+          print " "
+          ansipos ux,uy
+        endif
+      endif
+    endif
+	endwhile
+  quitchat (cnote)
+end
+
+procedure logo()
+  string text
+  integer leftpos
+  integer startpos
+  text="    ULTiCHAT-PPE (C) Peter Hollobon 1995    "
+  leftpos=40-(len(text)/2)
+  print "@CLS@"
+  ansipos leftpos,12
+  print "@X08"+text
+  for startpos=0 to (len(text)-4)
+    ansipos (leftpos-1)+startpos,12
+    print "@X08"+mid(text,startpos,1)
+    print "@X09"+mid(text,startpos+1,1)
+    print "@X03"+mid(text,startpos+2,1)
+    print "@X0B"+mid(text,startpos+3,1)
+    print "@X0F"+mid(text,startpos+4,1)
+    print "@X0B"+mid(text,startpos+5,1)
+    print "@X03"+mid(text,startpos+6,1)
+    print "@X09"+mid(text,startpos+7,1)
+    delay 1
+  next startpos
+endproc
+
+procedure getreason ()
+  integer in,out,now
+  string thereason
+  string scrolly
+  string char
+  integer start,count,width,update
+  string temp
+  integer pos
+  integer emergency
+  string getpassword
+
+  now=toint((left(PCBMAC("@SYSTIME@"),2)*100)+RIGHT(PCBMAC("@SYSTIME@"),2))
+  in=toint((left(PCBMAC("@SYSOPIN@"),2)*100)+RIGHT(PCBMAC("@SYSOPIN@"),2))
+  out=toint((left(PCBMAC("@SYSOPOUT@"),2)*100)+RIGHT(PCBMAC("@SYSOPOUT@"),2))
+
+  ; display the reason screen...
+  dispfile PPEPATH()+"reason.pcb",GRAPH
+
+  if ((now>out)||(now<in)) then
+    start=0
+    count=1
+    width=28
+    scrolly="Sorry "+PCBMAC("@FIRST@")+", the sysop is not currently available - try between "+PCBMAC("@SYSOPIN@")+" and "+PCBMAC("@SYSOPOUT@")+".  Use EMERGENCY if you know the password.  "
+    scrolly=scrolly+mid(scrolly,0,28)
+    ansipos 28,22
+    print "@X4C QUiT @X0F       EMERGENCY "
+    while (1) do
+      char=""
+      while (char="") do
+        char=inkey()                ; grab a character
+        if (update=2) then
+          ansipos 26,19
+          print "[0;1;30m"+mid(scrolly,start,1)
+          print "[0;32m"+mid(scrolly,start+1,1)
+          print "[1m"+mid(scrolly,start+2,24)
+          print "[0;32m"+mid(scrolly,start+(width-2),1)
+          print "[1;30m"+mid(scrolly,start+(width-1),1)
+          start=start+1
+          if ((start+width)>len(scrolly)) then
+            start=0
+          endif
+          update=0
+        endif
+        delay 1
+        update=update+1
+      endwhile
+      if (asc(char)=82) then
+        if (pos=0) then
+          pos=1
+        endif
+        ansipos 28,22
+        print "@X0F QUiT       @X4C EMERGENCY "
+      elseif (asc(char)=76) then
+        if (pos=1) then
+          pos=0
+        endif
+        ansipos 28,22
+        print "@X4C QUiT @X0F       EMERGENCY "
+      elseif (asc(char)=13) then
+        ansipos 28,22
+        print "@X0F                       "
+        if (pos=0) then
+          end
+        elseif (pos=1) then
+          emergency=1
+          break
+        endif
+      endif
+    endwhile
+  endif
+
+  if (emergency=1) then
+    getpassword=getstr(3,14,76,"@X09",0,"Enter the emergency password to page the sysop")
+    ansipos 3,14
+    print "@X08"
+    for count=1 to len(getpassword)
+      print "ú"
+    next count
+    if (getpassword!="hoimate") then
+      scrolly="Password wrong! - hit a key to return to the board.  "
+      scrolly=scrolly+mid(scrolly,0,28)
+      char=""
+      while (char="") do
+        char=inkey()                ; grab a character
+        if (update=2) then
+          ansipos 26,19
+          print "[0;1;30m"+mid(scrolly,start,1)
+          print "[0;31m"+mid(scrolly,start+1,1)
+          print "[1m"+mid(scrolly,start+2,24)
+          print "[0;31m"+mid(scrolly,start+(width-2),1)
+          print "[1;30m"+mid(scrolly,start+(width-1),1)
+          start=start+1
+          if ((start+width)>len(scrolly)) then
+            start=0
+          endif
+          update=0
+        endif
+        delay 1
+        update=update+1
+      endwhile
+      end
+    endif
+  endif
+
+   ; get the page reason
+  thereason=getstr(3,14,76,"@X09",0,"Hi, "+PCBMAC("@FIRST@")+" - please enter a reason for paging iMPULSE")
+
+   ; check the length
+  if (len(thereason)<3) then
+    start=0
+    count=1
+    width=28
+    scrolly="The page reason you entered was not long enough - hit a key to return to the board.  "
+    scrolly=scrolly+mid(scrolly,0,28)
+    while (char="") do
+      char=inkey()                ; grab a character
+      if (update=2) then
+        ansipos 26,19
+        print "[0;1;30m"+mid(scrolly,start,1)
+        print "[0;31m"+mid(scrolly,start+1,1)
+        print "[1m"+mid(scrolly,start+2,24)
+        print "[0;31m"+mid(scrolly,start+(width-2),1)
+        print "[1;30m"+mid(scrolly,start+(width-1),1)
+        start=start+1
+        if ((start+width)>len(scrolly)) then
+          start=0
+        endif
+        update=0
+      endif
+      delay 1
+      update=update+1
+    endwhile
+    end
+  endif
+endproc
+
+procedure page (integer pagetime)
+  string temp
+  integer cp,pagecount
+  integer update,start,count,width
+  string scrolly,char
+
+  for pagecount=1 to pagetime
+    cp=0
+    temp=""
+    ansipos 26,19
+    
+    print "@X08ÛÛÛÛÛÛÛÛÛÛ@X01[@X89PAGiNG.@X01]@X08ÛÛÛÛÛÛÛÛÛÛ"
+    while ((temp="")&&(cp!=10)) do
+      ansipos 26+cp,19
+      print "²"
+      ansipos 54-cp,19
+      print "²"
+      sound 1000
+      delay 1
+      sound 2000
+      delay 1
+      sound 3000
+      delay 1
+      sound 0
+      delay 1
+      ansipos 26+cp,19
+      print "±"
+      ansipos 54-cp,19
+      print "±"
+      sound 1000
+      delay 1
+      sound 2000
+      delay 1
+      sound 3000
+      delay 1
+      sound 0
+      delay 1
+      ansipos 26+cp,19
+      print "°"
+      ansipos 54-cp,19
+      print "°"
+      sound 1000
+      delay 1
+      sound 2000
+      delay 1
+      sound 3000
+      delay 1
+      sound 0
+      delay 1
+      ansipos 26+cp,19
+      print " "
+      ansipos 54-cp,19
+      print " "
+      sound 1000
+      delay 1
+      sound 2000
+      delay 1
+      sound 3000
+      delay 1
+      sound 0
+      delay 1
+      temp=kinkey()
+      if (temp!="") then
+        goto daend
+      endif
+      cp=cp+1
+    endwhile
+  next pagecount
+
+  start=0
+  count=1
+  width=28
+  scrolly="The sysop is not currently available - please try later.  "
+  scrolly=scrolly+mid(scrolly,0,28)
+  while (char="") do
+    char=inkey()                ; grab a character
+    if (update=2) then
+      ansipos 26,19
+      print "[0;1;30m"+mid(scrolly,start,1)
+      print "[0;31m"+mid(scrolly,start+1,1)
+      print "[1m"+mid(scrolly,start+2,24)
+      print "[0;31m"+mid(scrolly,start+(width-2),1)
+      print "[1;30m"+mid(scrolly,start+(width-1),1)
+      start=start+1
+      if ((start+width)>len(scrolly)) then
+        start=0
+      endif
+      update=0
+    endif
+    delay 1
+    update=update+1
+  endwhile
+  end
+  :daend
+endproc
+
+procedure quitchat (string middle)
+  integer cline
+  string test
+
+  ; wipe out the chatscreen
+  while ( cline != 12 ) do
+    ansipos 1,cline
+    print "@CLREOL@"
+    ansipos 1,24-cline
+    print "@CLREOL@"
+    cline=cline+1
+    delay 1
+  endwhile
+
+  ; fade the middle
+  ansipos 40-(len(middle)/2)-1,12
+  print "@X0F"+cnote
+  delay 2
+  ansipos 40-(len(middle)/2)-1,12
+  print "@X0B"+cnote
+  delay 2
+  ansipos 40-(len(middle)/2)-1,12
+  print "@X03"+cnote
+  delay 2
+  ansipos 40-(len(middle)/2)-1,12
+  print "@X09"+cnote
+  delay 2
+  ansipos 40-(len(middle)/2)-1,12
+  print "@X08"+cnote
+  delay 2
+  ansipos 1,12
+  print "@CLREOL@"
+  end
+endproc
+
+FUNCTION getstr(INTEGER X,INTEGER Y,INTEGER MAXLEN,STRING COLOR,INTEGER OPTS, string scrolly) STRING
+  STRING char
+  INTEGER crpos
+  integer start,count,width,update
+  
+  start=0
+  count=1
+  width=28
+
+  scrolly=scrolly+mid(scrolly,0,28)
+
+  crpos = 0
+  ansipos X,Y                     ; go to requested position
+  print COLOR                     ; set the color for the input text.
+  while (asc(char)!=13) do
+    ;while (char="") do
+      char=inkey()                ; grab a character
+      if (update=2) then
+        ansipos 26,19
+        print "@X08"+mid(scrolly,start,1)
+        print "@X07"+mid(scrolly,start+1,1)
+        print "@X0F"+mid(scrolly,start+2,24)
+        print "@X07"+mid(scrolly,start+(width-2),1)
+        print "@X08"+mid(scrolly,start+(width-1),1)
+        start=start+1
+        if ((start+width)>len(scrolly)) then
+          start=0
+        endif
+        update=0
+      endif
+      delay 1
+      update=update+1
+    ;endwhile
+                
+    if (ASC(char) = 8) then
+      if (crpos>0) then
+        ansipos x+crpos,y
+        print "@X08ú"         ; destructive backspace
+        crpos = crpos - 1   
+        getstr=left(getstr,len(getstr)-1)   ; delete last char of string
+      endif
+    else
+      if ((crpos < maxlen) & (asc(char) > 31)) then
+        ansipos x+crpos,y
+        print color+char
+        crpos = crpos + 1
+        getstr=getstr+char  ; add new char to string
+      endif
+    endif        
+  endwhile
+ENDFUNC
